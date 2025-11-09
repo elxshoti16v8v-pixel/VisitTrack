@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>VisitTrack - Send Location</title>
+</head>
+<body>
+  <h2>VisitTrack - Send Location</h2>
+  <p>این صفحه موقعیت شما را به سرور ارسال می‌کند. شناسهٔ ویزیتور را وارد کنید (یا خالی بگذارید).</p>
+  <input type="text" id="visitorId" placeholder="Visitor ID">
+  <button id="startBtn">Start Sending Location</button>
+  <button id="stopBtn" disabled>Stop</button>
+
+  <script>
+    let intervalId = null;
+    document.getElementById('startBtn').addEventListener('click', () => {
+      const visitorIdInput = document.getElementById('visitorId').value;
+      const visitorId = visitorIdInput || ('visitor_' + Math.floor(Math.random() * 10000));
+      function sendLocation() {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(async (position) => {
+          try {
+            await fetch('/api/send_location', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: visitorId,
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              })
+            });
+          } catch (e) {
+            console.error('Send failed', e);
+          }
+        }, (err) => { console.error('Geolocation error', err); });
+      }
+      sendLocation();
+      intervalId = setInterval(sendLocation, 5000);
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('stopBtn').disabled = false;
+      alert('Location sending started for ' + visitorId);
+    });
+
+    document.getElementById('stopBtn').addEventListener('click', () => {
+      if (intervalId) clearInterval(intervalId);
+      intervalId = null;
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('stopBtn').disabled = true;
+      alert('Stopped sending location');
+    });
+  </script>
+</body>
+</html>
